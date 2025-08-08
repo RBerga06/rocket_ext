@@ -283,6 +283,7 @@ impl Cors {
     fn handle_options<'r>(&self, req: &'r rocket::Request<'_>, res: &mut rocket::Response<'r>) {
         // SETUP
         let Some(cors_state) = req.rocket().state::<CorsState>() else {
+            println!("Failed to process CORS request: no cors state!");
             return;
         };
         let Some(path_methods) = req
@@ -291,6 +292,7 @@ impl Cors {
             .and_then(|path| cors_state.interner.get(&path))
             .and_then(|key| cors_state.path_map.get(&key))
         else {
+            println!("Failed to process CORS request: no path methods!");
             return;
         };
         let requested_method = req
@@ -311,6 +313,7 @@ impl Cors {
 
         // 1: make sure we have allowed methods
         if truely_allowed_methods.is_empty() {
+            println!("Failed to process CORS request: no allowed methods!");
             return;
         }
 
@@ -318,11 +321,11 @@ impl Cors {
         if let Some(requested_method) = requested_method
             && !truely_allowed_methods.contains(&requested_method)
         {
+            println!("Failed to process CORS request: the requested method is not in the allowed methods!");
             return;
         }
 
-        println!("{:?}", &self.headers);
-        println!("{:?}", &requested_headers);
+        dbg!(&self.headers, &requested_headers);
 
         // 3: Make sure the requested headers are allowed.
         if let Some(ref requested_headers) = requested_headers {
@@ -330,6 +333,7 @@ impl Cors {
                 if !requested_headers.is_subset(headers) {
                     // If the requested headers are not a subset of the allowed headers, we do not
                     // set the header
+                    println!("Failed to process CORS request: the requested headers are not a subset of the allowed headers!");
                     return;
                 }
             }
@@ -698,6 +702,14 @@ mod tests {
     async fn rocket_with_cors(cors: Cors, routes: &[Route]) -> anyhow::Result<Rocket<Ignite>> {
         Ok(rocket::build()
             .attach(cors)
+            .attach(rocket::fairing::AdHoc::on_request(
+                "Log-Request-Headers",
+                |req, _data| {
+                    Box::pin(async move {
+                        dbg!(req.headers());
+                    })
+                },
+            ))
             .mount("/", routes)
             .ignite()
             .await?)
