@@ -330,6 +330,7 @@ impl Cors {
         // 3: Make sure the requested headers are allowed.
         if let Some(ref requested_headers) = requested_headers {
             if let OrWildcard::Explicit(ref headers) = self.headers {
+                // FIXME: Apparently this comparison is case-sensitive!!!
                 if !requested_headers.is_subset(headers) {
                     // If the requested headers are not a subset of the allowed headers, we do not
                     // set the header
