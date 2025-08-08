@@ -146,7 +146,7 @@ impl Fairing for Cors {
     fn info(&self) -> Info {
         Info {
             name: "Cross-Origin-Resource-Sharing",
-            kind: Kind::Response | Kind::Ignite,
+            kind: Kind::Response | Kind::Ignite | Kind::Liftoff,
         }
     }
 
@@ -188,6 +188,41 @@ impl Fairing for Cors {
         };
 
         Ok(rocket.mount("/", options_routes).manage(cors_state))
+    }
+
+    async fn on_liftoff(&self, _rocket: &rocket::Rocket<rocket::Orbit>) {
+        use rocket::{yansi::Paint, info, info_};
+        info!("   {}:", self.info().name.magenta());
+        // Origins
+        if let OrWildcard::Explicit(origins) = &self.origins {
+            if origins.is_empty() {
+                info_!("{}: {}", CORS_ORIGIN, "<none>".primary());
+            } else {
+                info_!("{}: {}", CORS_ORIGIN, origins.iter().join(", ").primary());
+            }
+        } else {
+            info_!("{}: {}", CORS_ORIGIN, "*".primary());
+        }
+        // Headers
+        if let OrWildcard::Explicit(headers) = &self.headers {
+            if headers.is_empty() {
+                info_!("{}: {}", CORS_HEADERS, "<none>".primary());
+            } else {
+                info_!("{}: {}", CORS_HEADERS, headers.iter().join(", ").primary());
+            }
+        } else {
+            info_!("{}: {}", CORS_HEADERS, "*".primary());
+        }
+        // Methods
+        if self.methods.is_empty() {
+            info_!("{}: {}", CORS_METHODS, "<none>".primary());
+        } else {
+            info_!("{}: {}", CORS_METHODS, self.methods.iter().join(", ").primary());
+        }
+        // Max age
+        info_!("{}: {}", CORS_AGE, self.max_age.map(|age| age.as_secs().to_string()).unwrap_or("<none>".to_string()).primary());
+        // Credentials
+        info_!("{}: {}", CORS_CREDENTIALS, self.allow_creds.primary());
     }
 
     async fn on_response<'r>(&self, req: &'r rocket::Request<'_>, res: &mut rocket::Response<'r>) {
