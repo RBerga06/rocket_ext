@@ -321,8 +321,8 @@ impl Cors {
             return;
         }
 
-        dbg!(&self.headers);
-        dbg!(&requested_headers);
+        println!("{:?}", &self.headers);
+        println!("{:?}", &requested_headers);
 
         // 3: Make sure the requested headers are allowed.
         if let Some(ref requested_headers) = requested_headers {
