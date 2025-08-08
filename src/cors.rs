@@ -334,6 +334,8 @@ impl Cors {
                     // If the requested headers are not a subset of the allowed headers, we do not
                     // set the header
                     println!("Failed to process CORS request: the requested headers are not a subset of the allowed headers!");
+                    println!("Requested: {}", requested_headers.iter().join(","));
+                    println!("Allowed: {}", headers.iter().join(","));
                     return;
                 }
             }
